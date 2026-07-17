@@ -27,6 +27,10 @@ module reg_4bit_tb();
         en = 0; 
         d = 4'b1111;
         rst = 0; #100;
+        en = 1; 
+        #10; 
+        rst = 1; 
+        #10; 
 
 
         $finish;
