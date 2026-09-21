@@ -1,6 +1,6 @@
 module writeback_mux 
 (
-    input [7:0] alu_result, immediate, register_data,
+    input [7:0] alu_result, immediate, register_data, memory_data, 
     input [1:0] writeback_select, 
     output logic [7:0] writeback_data
 );
@@ -14,7 +14,7 @@ module writeback_mux
         else if(writeback_select == 2'b11)
             writeback_data = register_data; 
         else
-            writeback_data = 8'b0; 
+            writeback_data = memory_data; 
     end
 
 

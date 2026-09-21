@@ -3,7 +3,7 @@ Learning GPU architecture by building a small Verilog-based GPU for parallel mat
 
 ## Inspiration
 
-This project was inspired by Adam Maj's Tiny GPU project, a small GPU implementation written in System Verilog to explore PGU architecture from the ground up. 
+This project was inspired by Adam Maj's Tiny GPU project, a small GPU implementation written in System Verilog to explore GPU architecture from the ground up. 
 
 My goal with this repository is to develop my own understanding of GPU architecture, Verilog design, instruction-set design, and parallel computation by implementing and documenting similar concepts step by step.
 
@@ -73,20 +73,20 @@ As the modules have now become more complex, I plan to begin using self-checking
 
 ![Register File Waveform](images/register_file_waveform.png)
 
-#### ALU
+### ALU
 This was another interesting module. The Arithmetic Logic Unit, or ALU for short, is where most of the computational operations happen inside a processor. For my Tiny GPU, the ALU can perform addition, subtraction, multiplication, AND, OR, and XOR operations. 
 
 These operations are selected using the `alu_operation` input. The control unit will eventually use the opcode from the instruction set to determine what value should be sent through `alu_operation`. 
 
 One of the main things I learned while creating this module was how overflow works for different arithemtic operations. 
 
-For addition, overflow happens when the two operands have different signs, and the sign of the result differs from operand A. 
+For addition, overflow happens when the two operands have the same signs, and the sign of the result differs from operand A. 
 
 For subtraction, overflow occurs when the two operands have different signs, and the sign of the result differs from operand A. 
 
 Multiplication works a little bit differently because multiplying two 8-bit values can produce a 16-bit result. The lower eight bits are stored in `result`. While the upper eight bits are checked for overflow. If any bit in the `produce[15:0]` is a `1`, then the complete result couldn't fit into the 8'bit output. 
 
-The zero flag is more straightforward. After the ALU finishes an operation, it check wether the final result is `0000_0000`. If it is, then `overflag` is asserted. 
+The zero flag is more straightforward. After the ALU finishes an operation, it check wether the final result is `0000_0000`. If it is, then `zeroflag` is asserted. 
 
 #### Testbench
 For this module, I designed a self-checking testbench. The initialization is similar to my previous testbenches, but I introduced a new SystemVerilog feature called a `task`. 
@@ -121,7 +121,7 @@ After testing the different ALU operations and flag conditions, all of the tests
 
 ![ALU waveform](images/alu_waveform.png)
 
-#### Program Counter
+### Program Counter
 The next module I created was the Program Counter. I won't go too deep into how this module works because I already explained the basic idea in my SAP-1 project. However, this Program Counter differs from the SAP-1's version because it can also receive a new address and jump directly to it by using the `[7:0] next_pc` input. 
 
 Normally, the Program Counter increments by one on every rising edge of the clock. However, when `pc_load` is asserted, instead of incrementing the Program Counter loads the value that is stored in `next_pc`. This will be really useful for the branch instructions where the processor needs to continue execution from a different instruction address. 
@@ -139,7 +139,7 @@ Below are the results of the self-checking testbench.
 
 ![Program Counter Waveform](images/pc_waveform.png)
 
-#### Control Unit
+### Control Unit
 This was another fascinating module, although it did take a while to complete because I had to make sure that every instruction generated the correct control signals. 
 
 The Control Unit takes 4-bit `opcode` from the Instruction Decoder and uses a `case` statement to determine what the rest of the processor should do. Depending on the instruction, it can enable register write, select an ALU operation, write to memory , load a new Program Counter address, or halt execution. 
@@ -201,7 +201,7 @@ I also test both possible conditions for `BEQ` and `BNE` instructions. this allo
 ![Control Unit Waveform](images/control_unit_waveform.png)
 
 
-#### Writeback Mux
+### Writeback Mux
 This is a small module that I created to select what data should be written back into `Rd`. It is a 3-to1 mux controlled by the `writeback_select` signal. 
 
 The three possible inputs are: 
@@ -217,9 +217,6 @@ The `writeback_select` signal determines which value is sent to the Register Fil
 - `2'b11` - Register data
 - `2'b00` - Default value of zero
 
-#### Modification
-While building this module, I also made some modifications to `program_counter` and `register_file`. 
-
 ##### Register File
 For the Register File, I added a third read port for the `MAC` operation. 
 
@@ -233,7 +230,7 @@ I also modified the testbench and tested the Register file again to make sure th
 
 ![Modified Register File](images/modified_register_file_waveform.png)
 
-##### Program Counter
+###### Program Counter
 For the Program Counter, I added one more input called `halt`. When this signal is asserted, the Program Counter holds its current value instead of continuing to increment. 
 
 I also modified the testbench to check that the Program Counter stays at the same address while `halt` is asserted. 
@@ -250,4 +247,177 @@ I also tested the unused `2'b00` selection to make sure that the output was all 
 ![Writeback Testbench](images/writeback_mux_waveform.png)
 
 ![Writeback Testbench Test](images/writeback_mux_waveform_selfchecking.png)
+
+### Compute Core
+Wow, this module really took a while to make. I put this project to the side for about two weeks since I was working on a Family Feud game for a SHPE GBM I was hosting during the first week of classes. 
+
+But anyways, let's get back to this module. The compute core basically connects most of the modules I previously created to form the main exectuion unit of the GPU. This GPU will eventually have four compute cores in total, so this module represents one of the four cores. 
+
+While creating the core, I also modified the ISA. I changed the immediate load instruction to `LDI`, which loads an immediate value into a register, and added `LD`, which loads a value from memory into a register. 
+
+For example: 
+
+```text
+LDI R1, 5
+```
+
+This loads the immediate value 5 into R1, while 
+
+```text
+LD R1, 0x10 
+```
+
+loads the value in the memory address 0x10 into R1.
+
+The compute core connects the instruction deocder, control unit, register file, ALU, program counter, and writeback mux together. This allows the core to execute arithmetic instructions, move values between registers, access memory, and change program flow using jumps and branches. 
+
+While creating this module, I had trouble simulating it because the simulation would get stuck and wouldn't produce the full waveform when certain instructions were executed. Debugging this help me understand how important it is to avoid combinational loops when connecting different modules together. 
+
+#### Testbench
+While writing the testbench, the biggest issue I ran into was that the simulation would stop continuing when it reached the `SUB` instruction. 
+
+The problem was caused by a combinational loop between the control unit and the ALU. The control unit was affecting the ALU operation while also depending on a flag that was produced from the ALU. This caused the simulator to continuously check both module without progressing the simulation time. 
+
+After fixing this, I tested several instructions together to make sure the entire compute core was working properly.
+
+The testbench currently tests instructions like: 
+- `LDI`
+- `ADD`
+- `SUB`
+- `MOV` 
+- `LD` 
+- `STORE`
+- `BEQ`
+- `BNE` 
+- `JMP` 
+- `HALT`
+
+I also added registers 0-5 to the waveform to confirm that values were being written to the correct registers. 
+
+![Compute Core](images/compute_core_waveform.png)
+
+### Instruction_memory
+This module wasn't too hard to write. I just needed four different program counter inputs and four instruction outputs, one for each of the four compute cores. 
+
+The main purpose of this module is to allow each core to fetch its own insturction using its own program counter. Since every core has its own PC, they can each request an instruction from a different location in instruction memory. 
+
+The biggest improvement from SAP-1 project is that the program is now being read from an external file instead of being hard-coded directly into memory. This is done using the following code: 
+
+```verilog
+initial begin
+    $readmemh("programs/program.hex", memory); 
+end
+```
+The `$readmemh` reads the hexadecimal instructions stored inside `program.hex` and loads them into the instruction memory when the simulation begins. 
+
+For example, the program counter file can have 
+````text 
+1105
+1207
+4312
+F000
+````
+
+which in binary is just 
+0001 0001 0000 0101 -> LDI, R1, 5
+0001 0010 0000 0111 -> LDI, R2, 7
+0100 0011 0001 0010 -> ADD, R3, R1, R2
+1111 0000 0000 0000 -> HALT 
+
+
+#### Testbench
+The testbench for this module was also straightfoward. I want to make sur ethat the instruction stored inside `program.hex` were correctly loaded into memory and appeared on all four instruction outputs. 
+
+The testbench changes the program counter address and checks that `instruction_0`, `instruction_1`, `instruction_2`, and `instruction_3` all returned the expected 16-bit instruction. 
+
+![instruction_memory](images/instruction_memory_waveform.png);
+
+### Dispatcher
+Although this module looks tedious because it has 17 ports, it was relatively easy to create. 
+
+The basic functionality of the dispatcher is to manaage the four compute cores. it determines which cores should be enabled using `core_X_enable`, monitors whether each enable core has stopped using its `halt` signal, and asserts done when every active core has finished. 
+
+When `start` is asserted the dispatcher uses a case statement to check `thread_count`. It then enables the corresponding number of cores. For example, a `thread_count` of three enables cores 0, 1, and 2. Each core is also assigned its own thread ID from 0 - 3. 
+
+The internal `busy` signal keeps track of wether teh dispatcher is currently running a group of thread. While `busy` is asserted, the dispatcher check wether every enabled core has asserted its `halt` signal. Once every active core has halted, the dispatcher disables all four cores, clears busy, and asserts `done` signal. 
+
+#### Testbench
+The testbench checks all of the supported `thread_count` from one through four. For each thread count, it verfies the core enable signals, thread IDS, halt behavior, and `done` output.
+
+One difficulty I had to resolve involved unasserting `rst`. Originally, reset was being changed at the same time as a postive clock edge which just created a race condition. I fixed this by implementing
+
+```` verilog
+    repeat (2) @(posedge clk);
+    @(negedge clk);
+````
+
+The `repeat` statement waits for two positive clock edges so the synchronous reset is recognized by the dispatcher. The testbench then waits for a negative clock edge before deasserting `rst`, preventing reset from changing at the same time as the active clock edge. 
+
+![Dispatcher Waveform](images/dispatcher_waveform.png);
+
+![Dispatcher Verification](images/dispatcher_self_checking_testbench.png);
+
+### Compute Cluster
+This module took a while to finish, especially because of the testbench. The purpose of the compute cluster is to combine the dispatcher with all four compute cores. The dispatcher uses `thread_count` to enable the requested number of cores and asserts done once every enabled core has been halted. 
+
+#### Modified Modules
+Two modules that were modified while creating the compute cluster: `compute_core` and `program_counter`. 
+
+The `compute_core` module was given an additional input called `core_enable`. This allows the dispatcher to enable or disable each individual core. It also prevents a disabled core from updating any of its internal registers. 
+
+The `program_counter` module was given an `enabled` input. When `enabled` is not asserted, the program counter holds its current values instead of moving advancing. This allows the dispatcher to keep unused cores disabled 
+
+#### Testbench 
+This was the longest testbench I had written at this point. This was mainly because of the number of inputs and outputs, instruction local parameters, the instruction logic for each core, and the self-checking task.
+
+Each core executes a small program: first loads a value into `R1`. It then loads another value into `R2` and adds the two values together, storing the result in `R3`. Finally, each core stores `R3` at a different memory address.
+
+Some cores execute additional `NOP` instructions before stopping or `HALTING`. This gives each program a different length and allows for the `done` signal to be verified that it only gets asserts until all the cores are halted.
+
+The testbench also gives each core an instruction according to the core's program counter. It checks the program counters, memory addresses, memory write data, and memory write enables, and the final `done` signal. 
+
+![Compute Cluster Waveform](images/compute_cluster_waveform.png)
+
+#### Four Active Cores
+I also tested the cluster with different `thread_count` values: 
+```verilog
+thread_count = 3'd1 // Enables core 0 
+thread_count = 3'd2 // Enables core 1
+thread_count = 3'd3 // Enables core 2
+thread_count = 3'd4 // Enables Core 3
+```
+
+![One Compute Cluster Waveform](images/compute_cluster_one_core_test_waveform.png)
+
+![Two Compute Cluster Waveform](images/compute_cluster_two_core_active_waveform.png)
+
+![Three Compute Cluster Waveform](images/compute_cluster_testing_core_waveform.png)
+
+This tests all confirmed that the dispatcher correctly controls the four compute cores, each enabled core executes its own instructions, disabled cores remain inactive and `done` is only asserted after each active core has stoped
+
+### Data Memory
+Before implementing the data memory I modified the `control_unit`, `compute_core`, and `compute_cluster` modules so that they can support memory reads. The control unit now asserts a `mem_read` signal during a `LOAD` instruction. The compute core and compute cluster also got new `memory_read_enable` output signals allowing future cache and memory modules to determine when a core is requesting data 
+
+After making these changes I retested the compute cluster to verify that both the memory read and write signals still work correctly. 
+
+![Compute Cluster](images/memory_cluster_updates/new_compute_cluster.png)
+
+The data memory will serve as the primary storage for the program's data. It contains 256 memory locations that each hold an 8-bit value. The cache will sit between the cores and data memory and hold copies of recently accessed values.
+
+Writes occur on the rising edge of the clock when `write_enable` is asserted. Reads are combinational, so when `read_enable` is asserted, `read_data` will display the values stored at that address. When reading is disabled, `read_data` outputs zero. 
+
+
+#### Testbench 
+The testbench begins by initializing all input signals to zero. It then performs the following test: 
+
+1. Writes `0x08` to address `0x10` and reads it back.
+2. Writes `0x10` to address `0x14` and verifies the stored value.
+3. Reads address `0x10` again to ensure its original value was not changed by writing to another address. 
+4. Overwrites address `0x10` with `0x12` and confirms that the value was updated correctly. 
+5. Checks the `read_data` outputs zero whenever `read_enable` is disabled 
+
+All tests passed confirming that the module can write, retain, read, and overwrite stored data correctly
+
+![Data Memory](images/memory_cluster_updates/data_memory_waveform.png)
+
 

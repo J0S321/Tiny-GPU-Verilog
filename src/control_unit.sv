@@ -2,7 +2,9 @@ module control_unit
 (
     input zeroflag, 
     input [3:0] opcode, 
-    output logic reg_write_enable, pc_load, mem_write, halt,
+
+    output logic mem_read, 
+    output logic reg_write_enable, pc_load, mem_write, halt, //Basically flags for write to register file, load PC enable, and write to cache and halt
     output logic [1:0] writeback_select,
     output logic [2:0] alu_operation
 );
@@ -15,13 +17,13 @@ module control_unit
         halt = 1'b0; 
         alu_operation = 3'b000; 
         writeback_select = 2'b00; 
-
+        mem_read = 1'b0; 
         case(opcode)
 
         4'b0000: begin //NOP
         end
 
-        4'b0001: begin //LOAD
+        4'b0001: begin //LDI
             reg_write_enable = 1'b1; 
             writeback_select = 2'b10;
         end
@@ -95,6 +97,12 @@ module control_unit
                 pc_load = 1'b1; 
             else
                 pc_load = 1'b0; 
+        end
+
+        4'b1110: begin //LOAD
+            mem_read = 1'b1; 
+            reg_write_enable = 1'b1; 
+            writeback_select = 2'b00; 
         end
 
         4'b1111: begin
