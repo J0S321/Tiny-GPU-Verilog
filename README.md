@@ -23,7 +23,6 @@ See the [Development log](docs/README.md) for module development, testbenches, a
 | Simulation | Icarus Verilog, directed SystemVerilog testbenches, VCD waveform inspection | 
 
 ## Architecture 
-
 ```mermaid
 flowchart TB
     CTRL["Dispatch control"]
@@ -192,6 +191,6 @@ The design uses 8-bit data and a simple cache to make the hardware easier to und
 Testing curretly uses simulation. Measuring hardware timing, resource usages, and automated test coverage is planned for the future work. 
 
 ## Next Steps
-[ ] end-toend multicore memory testing: Verify multiple cores share the arbiter, cache, and data memory 
+[ ] end-to-end multicore memory testing: Verify multiple cores share the arbiter, cache, and data memory 
 
 [ ] UVM verification: build a verification environment with monitors, scoreboards, and functional coverage. 
