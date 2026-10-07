@@ -4,7 +4,7 @@ A GPU-style processor built to explore parallel execution, instruction-set desig
 I started this project after building a [SAP-1](https://github.com/J0S321/SAP-1-Verilog) computer in Verilog. My goal is to understand how individual modules work together, then extent that foundation to parallel computing and memory hierarchy. 
 
 **Status: In progress**
-Development Log
+See the [Development log](docs/README.md) for module development, testbenches, and waveforms. 
 
 ## At a Glance
 | Feature | Current Design |
@@ -27,14 +27,18 @@ Development Log
 ```mermaid
 flowchart TB
     CTRL["Dispatch control"]
-    I["External instruction source"]
 
     subgraph GPU["tiny_gpu"]
         direction TB
 
         subgraph CC["Compute cluster"]
             direction TB
-            D["Dispatcher"]
+
+            subgraph TOP["Dispatch and instruction inputs"]
+                direction LR
+                D["Dispatcher"]
+                I["instruction_0 through instruction_3"]
+            end
 
             subgraph CORES["Four compute cores"]
                 direction LR
@@ -45,6 +49,7 @@ flowchart TB
             end
 
             D -->|"core_enable[3:0]"| CORES
+            I -->|"Per-core instructions"| CORES
             CORES -->|"Per-core halt signals"| D
         end
 
@@ -66,9 +71,9 @@ flowchart TB
 
     CTRL -->|"start, thread_count[2:0]"| D
     D -->|"done"| DONE["Completion"]
-    I -->|"instruction_0 through instruction_3"| CORES
-    CORES -->|"pc_0 through pc_3"| I
+    CORES -->|"Per-core instruction addresses"| PCOUT["pc_0 through pc_3"]
 ```
+
 **PLACE HOLDER DIAGRAM FOR NOW** 
 The `tiny_gpu` top level contains two clusteres: 
 - Compute Cluster: A dispatcher and four compute cores. The dispatcher selects what cores are active and reports when all active cores have finished. 
@@ -188,4 +193,5 @@ Testing curretly uses simulation. Measuring hardware timing, resource usages, an
 
 ## Next Steps
 [ ] end-toend multicore memory testing: Verify multiple cores share the arbiter, cache, and data memory 
+
 [ ] UVM verification: build a verification environment with monitors, scoreboards, and functional coverage. 
