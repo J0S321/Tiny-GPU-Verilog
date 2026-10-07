@@ -4,15 +4,24 @@ module compute_cluster
     input  [2:0] thread_count,
     input  [15:0] instruction_0, instruction_1, instruction_2, instruction_3,
     input  [7:0] memory_read_data_0, memory_read_data_1, memory_read_data_2, memory_read_data_3,
-
+    
+    //NEW
+    input logic memory_ready_0, 
+    input logic memory_ready_1, 
+    input logic memory_ready_2, 
+    input logic memory_ready_3, 
 
     //NEW
-    output logic memory_read_enable_0, memory_read_enable_1, memory_read_enable_2, memory_read_enable_3, 
+    output logic memory_read_enable_0, 
+    output logic memory_read_enable_1,
+    output logic memory_read_enable_2, 
+    output logic memory_read_enable_3, 
     output  done,
     output  memory_write_enable_0, memory_write_enable_1, memory_write_enable_2, memory_write_enable_3,
     output  [7:0] pc_0, pc_1, pc_2, pc_3,
     output  [7:0] memory_address_0, memory_address_1, memory_address_2, memory_address_3,
     output  [7:0] memory_write_data_0, memory_write_data_1, memory_write_data_2, memory_write_data_3
+
 );
 
     logic [3:0] core_enable, core_halt; 
@@ -51,6 +60,7 @@ module compute_cluster
         .rst(rst),
         .core_enable(core_enable[0]),
         .memory_read_data(memory_read_data_0),
+        .memory_ready(memory_ready_0), 
         .instruction(instruction_0),
 
         .memory_read_enable(memory_read_enable_0),
@@ -68,6 +78,7 @@ module compute_cluster
         .rst(rst),
         .core_enable(core_enable[1]),
         .memory_read_data(memory_read_data_1),
+        .memory_ready(memory_ready_1), 
         .instruction(instruction_1),
 
         .memory_read_enable(memory_read_enable_1),
@@ -85,6 +96,7 @@ module compute_cluster
         .rst(rst),
         .core_enable(core_enable[2]),
         .memory_read_data(memory_read_data_2),
+        .memory_ready(memory_ready_2), 
         .instruction(instruction_2),
 
         .memory_read_enable(memory_read_enable_2),
@@ -102,6 +114,7 @@ module compute_cluster
         .rst(rst),
         .core_enable(core_enable[3]),
         .memory_read_data(memory_read_data_3),
+        .memory_ready(memory_ready_3),  
         .instruction(instruction_3),
 
         .memory_read_enable(memory_read_enable_3),

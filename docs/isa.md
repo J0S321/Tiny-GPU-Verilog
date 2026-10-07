@@ -16,7 +16,7 @@
 | `1011` | JMP         | unused        | imm8[7:4]  |imm8[3:0]| PC = imm8      |
 | `1100` | BEQ         | imm4      | Rs1        | Rs2      | Rs1 == Rs2 : PC = imm4|
 | `1101` | BNE         | imm4      | Rs1        | Rs2      | Rs1 != Rs2 : PC = imm4|
-| `1110` | LOAD        | Rs    | addr[7:4]     | addr[3:0]   | Rd = RAM[addr8]      |
+| `1110` | LOAD        | Rd    | addr[7:4]     | addr[3:0]   | Rd = RAM[addr8]      |
 | `1111` | HALT        | unused    | unused     | unused   | stopping execution       |
 
 # Architecture rules

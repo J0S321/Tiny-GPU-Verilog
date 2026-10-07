@@ -14,6 +14,8 @@ logic [7:0] memory_read_data_0,
 
 logic done;
 
+logic memory_ready_0, memory_ready_1, memory_ready_2, memory_ready_3;
+
 logic memory_read_enable_0, 
     memory_read_enable_1, 
     memory_read_enable_2, 
@@ -57,30 +59,35 @@ compute_cluster uut
     .clk(clk),
     .rst(rst),
     .start(start),
-
     .thread_count(thread_count),
+
     .instruction_0(instruction_0),
     .instruction_1(instruction_1),
     .instruction_2(instruction_2),
     .instruction_3(instruction_3),
 
+
     .memory_read_data_0(memory_read_data_0),
     .memory_read_data_1(memory_read_data_1),
     .memory_read_data_2(memory_read_data_2),
     .memory_read_data_3(memory_read_data_3),
-    
-    .done(done),
+
+    .memory_ready_0(memory_ready_0),
+    .memory_ready_1(memory_ready_1),
+    .memory_ready_2(memory_ready_2),
+    .memory_ready_3(memory_ready_3),
+
+    .memory_read_enable_0(memory_read_enable_0), 
+    .memory_read_enable_1(memory_read_enable_1), 
+    .memory_read_enable_2(memory_read_enable_2),
+    .memory_read_enable_3(memory_read_enable_3), 
 
     .memory_write_enable_0(memory_write_enable_0),
     .memory_write_enable_1(memory_write_enable_1),
     .memory_write_enable_2(memory_write_enable_2),
     .memory_write_enable_3(memory_write_enable_3),
 
-    .memory_read_enable_0(memory_read_enable_0),
-    .memory_read_enable_1(memory_read_enable_1),
-    .memory_read_enable_2(memory_read_enable_2),
-    .memory_read_enable_3(memory_read_enable_3),
-
+    .done(done),
     .pc_0(pc_0),
     .pc_1(pc_1),
     .pc_2(pc_2),
@@ -157,10 +164,10 @@ task test_cluster
             (memory_address_2 === ex_memory_address_2) &&
             (memory_address_3 === ex_memory_address_3) &&
 
-            (memory_write_data_0 === ex_write_data_0) &&
-            (memory_write_data_1 === ex_write_data_1) &&
-            (memory_write_data_2 === ex_write_data_2) &&
-            (memory_write_data_3 === ex_write_data_3) &&
+            (!ex_memory_write_enable_0 || memory_write_data_0 === ex_write_data_0) &&
+            (!ex_memory_write_enable_1 || memory_write_data_1 === ex_write_data_1) &&
+            (!ex_memory_write_enable_2 || memory_write_data_2 === ex_write_data_2) &&
+            (!ex_memory_write_enable_3 || memory_write_data_3 === ex_write_data_3) &&
 
             (memory_read_enable_0 === ex_memory_read_enable_0) &&
             (memory_read_enable_1 === ex_memory_read_enable_1) &&
@@ -265,34 +272,38 @@ task test_cluster
                     ex_memory_address_3,
                     memory_address_3
                 );
-
-            if (memory_write_data_0 !== ex_write_data_0)
-                $display(
-                    "  core 0 write_data: expected=0x%02h, actual=0x%02h",
-                    ex_write_data_0,
-                    memory_write_data_0
-                );
-
-            if (memory_write_data_1 !== ex_write_data_1)
-                $display(
-                    "  core 1 write_data: expected=0x%02h, actual=0x%02h",
-                    ex_write_data_1,
-                    memory_write_data_1
-                );
-
-            if (memory_write_data_2 !== ex_write_data_2)
-                $display(
-                    "  core 2 write_data: expected=0x%02h, actual=0x%02h",
-                    ex_write_data_2,
-                    memory_write_data_2
-                );
-
-            if (memory_write_data_3 !== ex_write_data_3)
-                $display(
-                    "  core 3 write_data: expected=0x%02h, actual=0x%02h",
-                    ex_write_data_3,
-                    memory_write_data_3
-                );
+            if(memory_write_enable_0) begin
+                if (memory_write_data_0 !== ex_write_data_0)
+                    $display(
+                        "  core 0 write_data: expected=0x%02h, actual=0x%02h",
+                        ex_write_data_0,
+                        memory_write_data_0
+                    );
+            end 
+            if(memory_write_enable_1) begin 
+                if (memory_write_data_1 !== ex_write_data_1)
+                    $display(
+                        "  core 1 write_data: expected=0x%02h, actual=0x%02h",
+                        ex_write_data_1,
+                        memory_write_data_1
+                    );
+            end 
+            if(memory_write_enable_2) begin
+                if (memory_write_data_2 !== ex_write_data_2)
+                    $display(
+                        "  core 2 write_data: expected=0x%02h, actual=0x%02h",
+                        ex_write_data_2,
+                        memory_write_data_2
+                    );
+            end
+            if(memory_write_enable_3) begin
+                if (memory_write_data_3 !== ex_write_data_3)
+                    $display(
+                        "  core 3 write_data: expected=0x%02h, actual=0x%02h",
+                        ex_write_data_3,
+                        memory_write_data_3
+                    );
+            end
             if (memory_read_enable_0 !== ex_memory_read_enable_0)
                 $display(
                     "  core 0 memory_read_enable: expected=%0b, actual=%0b",
@@ -385,7 +396,11 @@ endtask
     initial begin
             $dumpfile("waveforms/compute_cluster_core_test_tb.vcd");
             $dumpvars(0, compute_cluster_core_test_tb);
-            
+            memory_ready_0 = 1'b0; 
+            memory_ready_1 = 1'b0; 
+            memory_ready_2 = 1'b0; 
+            memory_ready_3 = 1'b0; 
+
             clk = 1'b0; 
             rst = 1'b1; 
             start = 1'b0; 
@@ -404,8 +419,12 @@ endtask
             @(negedge clk);
             start = 1'b0; 
             //CHECKS IF ALL CORES ARE STORING
-            wait((pc_0 === 8'd3));
-            test_cluster
+            wait((pc_0 === 8'd3 && pc_1 === 8'd3 && pc_2 === 8'd3));
+            memory_ready_0 = 1'b1; //CORE gets assign to memory first, reset are disabled
+            memory_ready_1 = 1'b0; 
+            memory_ready_2 = 1'b0; 
+
+            test_cluster //STORING CORE 0
             (
                 //Memory_read_data inputs not used
                 8'd0,
@@ -446,86 +465,228 @@ endtask
                 1'b0,
                 1'b0
             );
-            wait(pc_0 === 8'd4);
 
-            test_cluster
+            @(posedge clk); 
+            #1; 
+            memory_ready_0 = 1'b0; 
+            memory_ready_1 = 1'b1; 
+
+            test_cluster //STORING CORE 1
             (
-                //Values returned to the active cores during LOAD
-                8'd8,
-                8'd14,
-                8'd27,
-                8'd0,
-
-                //DONE SIGNAL
-                1'b0,
-
-                //LOAD does not write to memory
-                1'b0,
-                1'b0,
-                1'b0,
-                1'b0,
-
-                //PC SIGNAL, CORE 3 DISABLED
-                8'd4,
-                8'd4,
-                8'd4,
-                8'd0,
-
-                //Addresses being read
-                8'h10,
-                8'h11,
-                8'h12,
-                8'h00,
-
-                //No memory write data during LOAD
-                8'd0,
-                8'd0,
-                8'd0,
-                8'd0,
-
-                //Active cores assert memory_read_enable
-                1'b1,
-                1'b1,
-                1'b1,
-                1'b0
-            );
-
-            wait((pc_0 === 8'd5));
-            test_cluster
-            (
-                8'd8,
-                8'd14, 
-                8'd27,
-                8'd0,
+                8'd0, 
+                8'd0, 
+                8'd0, 
+                8'd0, 
 
                 1'b0, 
 
-                1'b1,
-                1'b1,
-                1'b1,
-                1'b0,
+                1'b0, 
+                1'b1, 
+                1'b1, 
+                1'b0, 
 
-                8'd5, 
-                8'd5, 
-                8'd5, 
+                8'd4,
+                8'd3,
+                8'd3, 
+                8'd0, 
+                
+                8'h10, 
+                8'h11, 
+                8'h12, 
+                8'h00, 
+
+                8'd8, 
+                8'd14, 
+                8'd27, 
                 8'd0,
 
-                8'h11,
-                8'h12,
-                8'h13,
-                8'h00,
-
-                8'd8,
-                8'd14,
-                8'd27,
-                8'd0,
-
-                //No cores are reading during STORE
-                1'b0,
-                1'b0,
+                1'b1, 
+                1'b0, 
                 1'b0,
                 1'b0
             );
+
+            @(posedge clk);
+            #1; 
+            memory_ready_1 = 1'b0; 
+            memory_ready_2 = 1'b1; 
+
+            test_cluster //STORING CORE 2
+            (
+                8'd0, 
+                8'd0, 
+                8'd0, 
+                8'd0, 
+
+                1'b0, 
+
+                1'b0, 
+                1'b0, 
+                1'b1, 
+                1'b0, 
+
+                8'd4,
+                8'd4,
+                8'd3, 
+                8'd0, 
+                
+                8'h10, 
+                8'h11, 
+                8'h12, 
+                8'h00, 
+
+                8'd8, 
+                8'd14, 
+                8'd27, 
+                8'd0,
+
+                1'b1, 
+                1'b1, 
+                1'b0,
+                1'b0
+            );
+
+            @(posedge clk); 
+            #1; 
+            memory_ready_2 = 1'b0; 
+            memory_ready_0 = 1'b1; 
+
+            test_cluster //LOADING CORE 1
+            (
+                8'd8, 
+                8'd0, 
+                8'd0, 
+                8'd0, 
+
+                1'b0, 
+
+                1'b0, 
+                1'b0, 
+                1'b0, 
+                1'b0, 
+
+                8'd4,
+                8'd4,
+                8'd4, 
+                8'd0, 
+                
+                8'h10, 
+                8'h11, 
+                8'h12, 
+                8'h00, 
+
+                8'd0, 
+                8'd0, 
+                8'd0, 
+                8'd0,
+
+                1'b1, 
+                1'b1, 
+                1'b1,
+                1'b0
+            );
+
+            @(posedge clk); 
+            #1; 
+            memory_ready_0 = 1'b0; 
+            memory_ready_1 = 1'b1; 
+
+            test_cluster //LOADING CORE 2
+            (
+                8'd0, 
+                8'd14, 
+                8'd0, 
+                8'd0, 
+
+                1'b0, 
+
+                1'b1, 
+                1'b0, 
+                1'b0, 
+                1'b0, 
+
+                8'd5,
+                8'd4,
+                8'd4, 
+                8'd0, 
+                
+                8'h11, 
+                8'h11, 
+                8'h12, 
+                8'h00, 
+
+                8'd8, 
+                8'd0, 
+                8'd0, 
+                8'd0,
+
+                1'b0, 
+                1'b1, 
+                1'b1,
+                1'b0
+            );
+
+            @(posedge clk); 
+            #1; 
+            memory_ready_1 = 1'b0; 
+            memory_ready_2 = 1'b1; 
+
+            test_cluster //LOADING CORE 3
+            (
+                8'd0, 
+                8'd0, 
+                8'd027, 
+                8'd0, 
+
+                1'b0, 
+
+                1'b1, 
+                1'b1, 
+                1'b0, 
+                1'b0, 
+
+                8'd5,
+                8'd5,
+                8'd4, 
+                8'd0, 
+                
+                8'h11, 
+                8'h12, 
+                8'h12, 
+                8'h00, 
+
+                8'd8, 
+                8'd14, 
+                8'd0, 
+                8'd0,
+
+                1'b0, 
+                1'b0, 
+                1'b1,
+                1'b0
+            );
+            @(posedge clk); 
+            #1; 
+            memory_ready_2 = 1'b0;  // Core 2's LOAD finished; all three are at PC 5
+            if(pc_2 !== 8'd5)
+                $fatal(1, "Core 2 did not finish LOAD: PC =%0d", pc_2); 
+            
+            memory_ready_0 = 1'b1;  // Accept core 0 STORE
+            @(posedge clk);
+            #1;
+            memory_ready_0 = 1'b0;
+
+            memory_ready_1 = 1'b1;  // Accept core 1 STORE
+            @(posedge clk);
+            #1;
+            memory_ready_1 = 1'b0;
+            memory_ready_2 = 1'b1;  // Accept core 2 STORE
+
+            @(posedge clk);
+            #1;
+            memory_ready_2 = 1'b0;
+
+
             wait (done === 1'b1);
             #10; 
 

@@ -4,6 +4,9 @@ module compute_core
     input [7:0] memory_read_data, 
     input [15:0] instruction,
 
+    //NEW (MEMORY)
+    input logic memory_ready, 
+
     //NEW 
     output logic memory_read_enable, 
     output logic halt, memory_write_enable, 
@@ -43,7 +46,7 @@ module compute_core
     logic reg_write_enable, pc_load, mem_write, halt_signal, control_mem_read; 
     logic [1:0] writeback_select;
     logic [2:0] alu_operation;
-    assign gated_reg_write_enable = core_enable && reg_write_enable; 
+ 
 
     control_unit control_inst
     (
@@ -61,7 +64,10 @@ module compute_core
     //REGISTER FILE
     logic [7:0] write_data;
     logic [7:0] read_data_1, read_data_2, read_data_3; 
-    
+    logic core_step_enable; 
+
+    assign core_step_enable = core_enable && (!(control_mem_read || mem_write) || memory_ready); 
+    assign gated_reg_write_enable = core_step_enable && reg_write_enable;
     assign branch_equal = (read_data_2 == read_data_3);
     register_file register_file_unit
     (
@@ -100,7 +106,7 @@ module compute_core
         .rst(rst),
         .pc_load(pc_load),
         .halt(halt_signal),
-        .enabled(core_enable),
+        .enabled(core_step_enable),
         .next_pc(next_pc_check),
         .pc(pc)
     );
