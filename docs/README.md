@@ -577,7 +577,7 @@ The program performas these eight operations:
 The testbench checks that the completed STORE operations write 12 to `0x00` and 17 to `0x21`, then waits for `done before ending the simulation. The second result verifies that the loaded values used correctly in the following calculations. 
 
 ### Waveform 
-![WORKING](../images/TINYGPUSTESTPASS1)
+![WORKING](../images/TINYGPUSTEST1.png)
 
 The waveform shows core 0 progessing through the program, holding its PC during the LOAD, and halting at PC 7. The other three cores remain at PC 0, and `done` asserts after execution completes. 
 
