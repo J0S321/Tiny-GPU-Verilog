@@ -1,6 +1,7 @@
 # Development Log
 Learning GPU architecture by building a small Verilog-based GPU for parallel matrix operations. 
 
+[← Back to Tiny GPU overview](../README.md)
 ## Inspiration
 
 This project was inspired by Adam Maj's Tiny GPU project, a small GPU implementation written in System Verilog to explore GPU architecture from the ground up. 
@@ -49,7 +50,7 @@ Keeping these modules separate makes each component easier to understand, test, 
 
 The testbench verifies that the 16'bit instruction is correctly separated into the opcode and three 4-bit fields. It also verifies that fields 2 and 3 are concatenated correctly to produce the 8'bit `imm8` value. 
 
-![Instruction Decoder Waveform](images/Instruction_decoder_waveform.png)
+![Instruction Decoder Waveform](../images/Instruction_decoder_waveform.png)
 
 ### Register File
 
@@ -71,7 +72,7 @@ At the end of the simulation, `rst` is asserted again to verify that all of the 
 
 As the modules have now become more complex, I plan to begin using self-checking testbenches so that the expected values can be verified autoatically instead of relying entirely on waveform inspections. 
 
-![Register File Waveform](images/register_file_waveform.png)
+![Register File Waveform](../images/register_file_waveform.png)
 
 ### ALU
 This was another interesting module. The Arithmetic Logic Unit, or ALU for short, is where most of the computational operations happen inside a processor. For my Tiny GPU, the ALU can perform addition, subtraction, multiplication, AND, OR, and XOR operations. 
@@ -110,7 +111,7 @@ Tasks are basically like functions in C/C++. Using the parameter, the task would
 
 If all of the values matc, then the testbench displays that the test passed in the terminal. 
 
-![ALU Pass Terminal](images/alu_selfchecking.png)
+![ALU Pass Terminal](../images/alu_selfchecking.png)
 
 Now, if a value does not match, the testbench displays a failure message along with the expected values and the actual values produced by the ALU. This makes debugging so much easier than relying solely on the waveform inspections. 
 
@@ -119,7 +120,7 @@ I also placed the simulation delay inside of the task itself; because of this, t
 
 After testing the different ALU operations and flag conditions, all of the tests produced the expected results 
 
-![ALU waveform](images/alu_waveform.png)
+![ALU waveform](../images/alu_waveform.png)
 
 ### Program Counter
 The next module I created was the Program Counter. I won't go too deep into how this module works because I already explained the basic idea in my SAP-1 project. However, this Program Counter differs from the SAP-1's version because it can also receive a new address and jump directly to it by using the `[7:0] next_pc` input. 
@@ -135,9 +136,9 @@ I tested the Program Counter by reseting it to zero, allowing it to increment no
 
 Below are the results of the self-checking testbench. 
 
-![Program Counter Pass Terminal](images/pc_selfchecking.png)
+![Program Counter Pass Terminal](../images/pc_selfchecking.png)
 
-![Program Counter Waveform](images/pc_waveform.png)
+![Program Counter Waveform](../images/pc_waveform.png)
 
 ### Control Unit
 This was another fascinating module, although it did take a while to complete because I had to make sure that every instruction generated the correct control signals. 
@@ -185,7 +186,7 @@ using the previous value of `Rd` as the accumulator.
 
 Just to make sure that the module works as intended I also modified the testbench to verify. And everything works corrcetly!
 
-![New ALU Waveform](images/new_alu_waveform.png)
+![New ALU Waveform](../images/new_alu_waveform.png)
 
 
 #### Testbench 
@@ -196,9 +197,9 @@ The testbench goes through each opcode and checks wether the expected control si
 I also test both possible conditions for `BEQ` and `BNE` instructions. this allowed me to verify that the branch is taken when its conditions are true or ignored when the coditions are false. 
 
 
-![Control Unit Pass Terminal](images/control_unit_selfchecking.png)
+![Control Unit Pass Terminal](../images/control_unit_selfchecking.png)
 
-![Control Unit Waveform](images/control_unit_waveform.png)
+![Control Unit Waveform](../images/control_unit_waveform.png)
 
 
 ### Writeback Mux
@@ -228,25 +229,25 @@ The ALU needs to read `Rs1`. `Rs2` and the old value of `Rd` at the same time. T
 
 I also modified the testbench and tested the Register file again to make sure the new changes didn't break any functionality. 
 
-![Modified Register File](images/modified_register_file_waveform.png)
+![Modified Register File](../images/modified_register_file_waveform.png)
 
 ###### Program Counter
 For the Program Counter, I added one more input called `halt`. When this signal is asserted, the Program Counter holds its current value instead of continuing to increment. 
 
 I also modified the testbench to check that the Program Counter stays at the same address while `halt` is asserted. 
 
-![Modified Program Counter](images/modified_program_counter_waveform.png)
+![Modified Program Counter](../images/modified_program_counter_waveform.png)
 
-![Modified Program Counter Test](images/modified_program_counter_selfchecking.png)
+![Modified Program Counter Test](../images/modified_program_counter_selfchecking.png)
 
 #### Testbench
 The testbench for the Writeback Mux is pretty simple. I tested every possible value of `writeback_select` and checked if the correct input was sent to `writeback_data`. 
 
 I also tested the unused `2'b00` selection to make sure that the output was all zeros. 
 
-![Writeback Testbench](images/writeback_mux_waveform.png)
+![Writeback Testbench](../images/writeback_mux_waveform.png)
 
-![Writeback Testbench Test](images/writeback_mux_waveform_selfchecking.png)
+![Writeback Testbench Test](../images/writeback_mux_waveform_selfchecking.png)
 
 ### Compute Core
 Wow, this module really took a while to make. I put this project to the side for about two weeks since I was working on a Family Feud game for a SHPE GBM I was hosting during the first week of classes. 
@@ -294,7 +295,7 @@ The testbench currently tests instructions like:
 
 I also added registers 0-5 to the waveform to confirm that values were being written to the correct registers. 
 
-![Compute Core](images/compute_core_waveform.png)
+![Compute Core](../images/compute_core_waveform.png)
 
 ### Instruction_memory
 This module wasn't too hard to write. I just needed four different program counter inputs and four instruction outputs, one for each of the four compute cores. 
@@ -330,7 +331,7 @@ The testbench for this module was also straightfoward. I want to make sur ethat 
 
 The testbench changes the program counter address and checks that `instruction_0`, `instruction_1`, `instruction_2`, and `instruction_3` all returned the expected 16-bit instruction. 
 
-![instruction_memory](images/instruction_memory_waveform.png);
+![instruction_memory](../images/instruction_memory_waveform.png);
 
 ### Dispatcher
 Although this module looks tedious because it has 17 ports, it was relatively easy to create. 
@@ -353,9 +354,9 @@ One difficulty I had to resolve involved unasserting `rst`. Originally, reset wa
 
 The `repeat` statement waits for two positive clock edges so the synchronous reset is recognized by the dispatcher. The testbench then waits for a negative clock edge before deasserting `rst`, preventing reset from changing at the same time as the active clock edge. 
 
-![Dispatcher Waveform](images/dispatcher_waveform.png);
+![Dispatcher Waveform](../images/dispatcher_waveform.png);
 
-![Dispatcher Verification](images/dispatcher_self_checking_testbench.png);
+![Dispatcher Verification](../images/dispatcher_self_checking_testbench.png);
 
 ### Compute Cluster
 This module took a while to finish, especially because of the testbench. The purpose of the compute cluster is to combine the dispatcher with all four compute cores. The dispatcher uses `thread_count` to enable the requested number of cores and asserts done once every enabled core has been halted. 
@@ -387,11 +388,11 @@ thread_count = 3'd3 // Enables core 2
 thread_count = 3'd4 // Enables Core 3
 ```
 
-![One Compute Cluster Waveform](images/compute_cluster_one_core_test_waveform.png)
+![One Compute Cluster Waveform](../images/compute_cluster_one_core_test_waveform.png)
 
-![Two Compute Cluster Waveform](images/compute_cluster_two_core_active_waveform.png)
+![Two Compute Cluster Waveform](../images/compute_cluster_two_core_active_waveform.png)
 
-![Three Compute Cluster Waveform](images/compute_cluster_testing_core_waveform.png)
+![Three Compute Cluster Waveform](./images/compute_cluster_testing_core_waveform.png)
 
 This tests all confirmed that the dispatcher correctly controls the four compute cores, each enabled core executes its own instructions, disabled cores remain inactive and `done` is only asserted after each active core has stoped
 
@@ -400,7 +401,7 @@ Before implementing the data memory I modified the `control_unit`, `compute_core
 
 After making these changes I retested the compute cluster to verify that both the memory read and write signals still work correctly. 
 
-![Compute Cluster](images/memory_cluster_updates/new_compute_cluster.png)
+![Compute Cluster]../images/memory_cluster_updates/new_compute_cluster.png)
 
 The data memory will serve as the primary storage for the program's data. It contains 256 memory locations that each hold an 8-bit value. The cache will sit between the cores and data memory and hold copies of recently accessed values.
 
@@ -418,7 +419,7 @@ The testbench begins by initializing all input signals to zero. It then performs
 
 All tests passed confirming that the module can write, retain, read, and overwrite stored data correctly
 
-![Data Memory](images/memory_cluster_updates/data_memory_waveform.png)
+![Data Memory](../images/memory_cluster_updates/data_memory_waveform.png)
 
 ### Cache
 The cache is a small memory between the compute cores and data memory. It keeps values fetched from data memory so repeated reads can be served without anothe rmemory access. 
@@ -462,7 +463,7 @@ The testbench does a few things to very that the cache works.
 
 12. Reads `8'h2A` after the reset checks that testbench asserts reset between the two calls, invalidating cache entries. `2A` ahd just been fetched so the read checks that reset turns everything ito all zeros again. Since its a miss the cache checks the memory that the testbench supplies with `8'h66`.
 
-![Cache](images/Cache_waveform.png)
+![Cache](../images/Cache_waveform.png)
 
 ### Memory Arbiter 
 The four compute cores can request memory concurrently, but the cache has only one request input. The memory arbiter selects one core, forwards its request to the cache, waits for a completion and sends the response back to the core. 
@@ -472,11 +473,11 @@ Before I explain what the arbiter does and how I implemented it, there were a fe
 
 compute_core: Added `memory_read_enable` so a `LOAD` can request a read and added `memory_ready` so `LOAD` and `STORE` wait for a cache completion. While waiting the PC and register writes are held, but the memory request stays asserted.
 
-![Updated Compute Core](images/Updated_compute_core.png)
+![Updated Compute Core](../images/Updated_compute_core.png)
 
 compute_cluster: exposed the `read)enable` and ready signals for each of the four cores, then connected each `memory_ready_0` - `memory_ready_3` input and `memory_read_enable_0` - `memory_read_enable_3` output to the matching core instances.
 
-![Updated Compute Cluster](images/Updated_Compute_Cluster.png)
+![Updated Compute Cluster](../images/Updated_Compute_Cluster.png)
 
 This was my first time implementing an arbiter, so I documented how its signals and control logic work. 
 
@@ -525,7 +526,7 @@ It test
 - Write: Core 3's write of `55` to address 20 reaches the cache, and only core 3 receives completion 
 - Immediate response: If the cache is already ready when core 1 requests a read, core 1 receives data `77` without entering active. 
 
-![Arbiter](images/Arbiter_waveform.png)
+![Arbiter](../images/Arbiter_waveform.png)
 
 ### Memory Cluster
 The second-to-last module before fully integrating the top-level design of Tiny GPU. The memory cluster combines three crucial modules
@@ -548,9 +549,9 @@ The testbench acts as the four cores and checks the following cases:
 
 The testbench checks the expected data, ready signals, memory request, and cache contents. It stops with an error if the check fails.
 
-![Memory Cluster](images/memory_cluster_waveform.png);
+![Memory Cluster](../images/memory_cluster_waveform.png);
 
-![Memory Cluster Pass](images/memory_cluster_waveform.png);
+![Memory Cluster Pass](../images/memory_cluster_waveform.png);
 
 ### Tiny GPU 
 After building and testing all individual modules, I finally have a working Tiny GPU top-level integration!
@@ -576,7 +577,7 @@ The program performas these eight operations:
 The testbench checks that the completed STORE operations write 12 to `0x00` and 17 to `0x21`, then waits for `done before ending the simulation. The second result verifies that the loaded values used correctly in the following calculations. 
 
 ### Waveform 
-![WORKING](images/TINYGPUSTESTPASS1)
+![WORKING](../images/TINYGPUSTESTPASS1)
 
 The waveform shows core 0 progessing through the program, holding its PC during the LOAD, and halting at PC 7. The other three cores remain at PC 0, and `done` asserts after execution completes. 
 

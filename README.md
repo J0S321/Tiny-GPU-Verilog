@@ -4,7 +4,7 @@ A GPU-style processor built to explore parallel execution, instruction-set desig
 I started this project after building a [SAP-1](https://github.com/J0S321/SAP-1-Verilog) computer in Verilog. My goal is to understand how individual modules work together, then extent that foundation to parallel computing and memory hierarchy. 
 
 **Status: In progress**
-
+Development Log
 
 ## At a Glance
 | Feature | Current Design |
@@ -25,21 +25,34 @@ I started this project after building a [SAP-1](https://github.com/J0S321/SAP-1-
 ## Architecture 
 
 ```mermaid
-flowchart TD
+flowchart TB
+    CTRL["Dispatch control"]
     I["External instruction source"]
 
-    subgraph GPU["Tiny GPU"]
-        subgraph CC["Compute Cluster"]
+    subgraph GPU["tiny_gpu"]
+        direction TB
+
+        subgraph CC["Compute cluster"]
+            direction TB
             D["Dispatcher"]
-            C["Four Compute Cores"]
-            D -->|"Core enables"| C
-            C -->|"Halt signals"| D
+
+            subgraph CORES["Four compute cores"]
+                direction LR
+                C0["Core 0"]
+                C1["Core 1"]
+                C2["Core 2"]
+                C3["Core 3"]
+            end
+
+            D -->|"core_enable[3:0]"| CORES
+            CORES -->|"Per-core halt signals"| D
         end
 
-        subgraph MC["Memory Cluster"]
-            A["Round-Robin Arbiter"]
-            K["Direct-Mapped Cache"]
-            M["Shared Data Memory"]
+        subgraph MC["Memory cluster"]
+            direction TB
+            A["Round-robin arbiter"]
+            K["Direct-mapped cache"]
+            M["Shared data memory"]
 
             A -->|"Selected request"| K
             K -->|"Ready and read data"| A
@@ -47,12 +60,14 @@ flowchart TD
             M -->|"Read data"| K
         end
 
-        C -->|"Read/write requests, address, write data"| A
-        A -->|"Per-core ready and read data"| C
+        CORES -->|"Per-core read/write requests, addresses, write data"| A
+        A -->|"Per-core ready and read data"| CORES
     end
 
-    I -->|"Per-core instructions"| C
-    C -->|"Per-core PCs"| I
+    CTRL -->|"start, thread_count[2:0]"| D
+    D -->|"done"| DONE["Completion"]
+    I -->|"instruction_0 through instruction_3"| CORES
+    CORES -->|"pc_0 through pc_3"| I
 ```
 **PLACE HOLDER DIAGRAM FOR NOW** 
 The `tiny_gpu` top level contains two clusteres: 
@@ -152,6 +167,7 @@ The test checks the two stores, PC stalls when access memory, disabled-core PCs,
 Verificaiton combines directed stimulus, expected-versus-actual comparisons, and waveform inspection. Testbenches are developed alongside individual modules and expanded as components are connected. 
 
 | Test area | Existing checks | 
+|---|---|
 | ALU | Arithemtic and logical operations, multiply-accumulate, and status flags | 
 | Control Unit | Insturction control signals and taken/not-taken branch conditions | 
 | Program Counter | Resets, increment, target loading, halt, and enable behavior | 
@@ -169,6 +185,7 @@ Each core has its own PC and registers, allowing it to run its own instructions.
 The design uses 8-bit data and a simple cache to make the hardware easier to understand and debug. 
 
 Testing curretly uses simulation. Measuring hardware timing, resource usages, and automated test coverage is planned for the future work. 
+
 ## Next Steps
 [ ] end-toend multicore memory testing: Verify multiple cores share the arbiter, cache, and data memory 
 [ ] UVM verification: build a verification environment with monitors, scoreboards, and functional coverage. 
