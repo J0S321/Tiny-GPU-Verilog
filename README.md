@@ -195,4 +195,4 @@ Testing curretly uses simulation. Measuring hardware timing, resource usages, an
 
 [ ] UVM verification: build a verification environment with monitors, scoreboards, and functional coverage. 
 
-[ ] Full SMIT implementation 
+[ ] Full SIMT implementation 
