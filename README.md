@@ -1,5 +1,5 @@
 # Tiny GPU -- Four-Core Processor in SystemVerilog
-A GPU-style processor built to explore parallel execution, instruction-set design, and modular RTL verification. The design combines four  8-bit compute cores with a dispatcher that enables one to four cores and detects when all active cores have halted. 
+A GPU-style processor (MIMD Design) built to explore parallel execution, instruction-set design, and modular RTL verification. The design combines four  8-bit compute cores with a dispatcher that enables one to four cores and detects when all active cores have halted. 
 
 I started this project after building a [SAP-1](https://github.com/J0S321/SAP-1-Verilog) computer in Verilog. My goal is to understand how individual modules work together, then extent that foundation to parallel computing and memory hierarchy. 
 
@@ -194,3 +194,5 @@ Testing curretly uses simulation. Measuring hardware timing, resource usages, an
 [ ] end-to-end multicore memory testing: Verify multiple cores share the arbiter, cache, and data memory 
 
 [ ] UVM verification: build a verification environment with monitors, scoreboards, and functional coverage. 
+
+[ ] Full SMIT implementation 

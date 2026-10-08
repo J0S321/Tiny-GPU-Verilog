@@ -32,7 +32,7 @@ The instruction format is:
 | `[7:4]` | Field 2 |
 | `[3:0]` | Field 3 |
 
-The meaning of each field depends entire ont he opcode. For arithmetic instructions, the field may represent the destination and source register addresses.
+The meaning of each field depends entire on the opcode. For arithmetic instructions, the field may represent the destination and source register addresses.
 
 For instructions that use an immediate value or memory address, fields 2 and 3 are then concatenated together to create an 8-bit `imm8` output:
 
@@ -48,7 +48,7 @@ Keeping these modules separate makes each component easier to understand, test, 
 
 #### Testbench
 
-The testbench verifies that the 16'bit instruction is correctly separated into the opcode and three 4-bit fields. It also verifies that fields 2 and 3 are concatenated correctly to produce the 8'bit `imm8` value. 
+The testbench verifies that the 8'bit instruction is correctly separated into the opcode and three 4-bit fields. It also verifies that fields 2 and 3 are concatenated correctly to produce the 8'bit `imm8` value. 
 
 ![Instruction Decoder Waveform](../images/Instruction_decoder_waveform.png)
 
@@ -85,7 +85,7 @@ For addition, overflow happens when the two operands have the same signs, and th
 
 For subtraction, overflow occurs when the two operands have different signs, and the sign of the result differs from operand A. 
 
-Multiplication works a little bit differently because multiplying two 8-bit values can produce a 16-bit result. The lower eight bits are stored in `result`. While the upper eight bits are checked for overflow. If any bit in the `produce[15:0]` is a `1`, then the complete result couldn't fit into the 8'bit output. 
+Multiplication works a little bit differently because multiplying two 8-bit values can produce a 16-bit result. The lower eight bits are stored in `result`. While the upper eight bits are checked for overflow. If any bit in the `produce[15:8]` is a `1`, then the complete result couldn't fit into the 8'bit output. 
 
 The zero flag is more straightforward. After the ALU finishes an operation, it check wether the final result is `0000_0000`. If it is, then `zeroflag` is asserted. 
 
@@ -254,7 +254,7 @@ Wow, this module really took a while to make. I put this project to the side for
 
 But anyways, let's get back to this module. The compute core basically connects most of the modules I previously created to form the main exectuion unit of the GPU. This GPU will eventually have four compute cores in total, so this module represents one of the four cores. 
 
-While creating the core, I also modified the ISA. I changed the immediate load instruction to `LDI`, which loads an immediate value into a register, and added `LD`, which loads a value from memory into a register. 
+While creating the core, I also modified the ISA. I changed the immediate load instruction to `LDI`, which loads an immediate value into a register, and added `LOAD`, which loads a value from memory into a register. 
 
 For example: 
 
@@ -272,7 +272,9 @@ loads the value in the memory address 0x10 into R1.
 
 The compute core connects the instruction deocder, control unit, register file, ALU, program counter, and writeback mux together. This allows the core to execute arithmetic instructions, move values between registers, access memory, and change program flow using jumps and branches. 
 
-While creating this module, I had trouble simulating it because the simulation would get stuck and wouldn't produce the full waveform when certain instructions were executed. Debugging this help me understand how important it is to avoid combinational loops when connecting different modules together. 
+While implementing the compute core, I encountered a simulation issue where execution stalled during BEQ and BNE instructions, preventing the full waveform from being generated. Originally, I compared the register values by subtracting them in the ALU and checking its zero flag. However, the control unit both selected the ALU operation and used the resulting zero flag to decide wether to branch. This created a combination feedback dependency in my implementation. 
+
+To resolve this, I compared the register values directly and assigned the result to a `branch_eqaul` signal. The control unit then used this signal to determine wether to breanch: BEQ breanches when the values are equal, while BNE branches when they differ.
 
 #### Testbench
 While writing the testbench, the biggest issue I ran into was that the simulation would stop continuing when it reached the `SUB` instruction. 
@@ -286,7 +288,7 @@ The testbench currently tests instructions like:
 - `ADD`
 - `SUB`
 - `MOV` 
-- `LD` 
+- `LOAD` 
 - `STORE`
 - `BEQ`
 - `BNE` 
